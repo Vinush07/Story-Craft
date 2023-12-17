@@ -1,11 +1,22 @@
 import tkinter as tk
 from tkinter import messagebox
 import random
+import spacy
+
+nlp = spacy.load("en_core_web_sm")
 
 class StoryNode:
     def __init__(self, text, choices):
         self.text = text
         self.choices = choices
+
+def generate_story(input_text):
+    doc = nlp(input_text)
+
+    named_entities = [ent.text for ent in doc.ents]
+    named_entities_text = ', '.join(named_entities)
+
+    return f"{input_text}"
 
 def make_choice(choice_num):
     global current_node, story_text
@@ -14,7 +25,7 @@ def make_choice(choice_num):
         exit_game()
     else:
         choice_num -= 1  # Adjusting the index to correctly access the choices
-        story_text += f"\n\n{current_node.text}"
+        story_text += f"\n\n{generate_story(current_node.text)}"
         current_node = nodes[current_node.choices[choice_num]]
         update_display()
 
@@ -22,14 +33,19 @@ def exit_game():
     root.destroy()
 
 def update_display():
-    text_var.set(story_text + f"\n\n{current_node.text}")
+    global story_text
+
+    if not story_text:
+        story_text = f"The story involves characters like {', '.join(named_entities)}."
+
+    text_var.set(story_text + f"\n\n{generate_story(current_node.text)}")
 
     if current_node.choices[0] is None and current_node.choices[1] is None:
         button1["state"] = "disabled"
         button2["state"] = "disabled"
     else:
-        button1["text"] = nodes[current_node.choices[0]].text
-        button2["text"] = nodes[current_node.choices[1]].text
+        button1["text"] = generate_story(nodes[current_node.choices[0]].text)
+        button2["text"] = generate_story(nodes[current_node.choices[1]].text)
 
 root = tk.Tk()
 root.title("Story-Based Game")
@@ -39,6 +55,8 @@ root.tk_setPalette(background='#E0E0E0', foreground='#333333', activeBackground=
 
 text_var = tk.StringVar()
 story_text = ""
+named_entities = []
+
 text_label = tk.Label(root, textvariable=text_var, wraplength=400, justify="center", font=("Arial", 12))
 text_label.pack(pady=20)
 
@@ -53,7 +71,7 @@ exit_button.pack(pady=20)
 
 # Define story nodes
 nodes = {
-    1: StoryNode("You find yourself standing at a crossroads.", [2, 3]),
+   1: StoryNode("You find yourself standing at a crossroads.", [2, 3]),
         2: StoryNode("You encounter a mysterious old man who offers you a key.", [4, 5]),
         3: StoryNode("You reach a hidden cave. Inside, you find a treasure chest.", [6, 7]),
         4: StoryNode("As you continue down the path, you come across a mystical portal.", [8, 9]),
@@ -212,12 +230,7 @@ nodes = {
         200: StoryNode("You make a decision that will shape the destiny of the world and the conclusion of your extraordinary journey.", [None, None]),
 
 
-
-
-
-    }
-
-    
+}
 
 current_node = nodes[1]
 update_display()
